@@ -181,11 +181,13 @@ module Spree
       return unless (params[:state] == "payment")
       #return unless params[:order][:payments_attributes]
 
+      
       if (!params.has_key?("paypal_button.x"))
         #@order.payment_method = get_EwayID(@order)
+        params[:order] = Hash.new if params[:order].nil?
         params[:order][:payments_attributes] = Array.new.push({"payment_method_id" => get_EwayID().id.to_s})        
         logger.info ":::EWAY PAYMENT DETECTED:::"
-        return
+        return        
       else
         params.delete :payment_source
       end
