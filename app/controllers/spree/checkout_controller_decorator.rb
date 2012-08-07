@@ -175,10 +175,21 @@ module Spree
       payment.log_entries.create(:details => response.to_yaml)
     end
 
+
     def redirect_to_paypal_express_form_if_needed
       logger.debug ":::PAYPALEXPRESS REDIRECT:::"
       return unless (params[:state] == "payment")
       #return unless params[:order][:payments_attributes]
+
+      if (!params.has_key?("paypal_button.x"))
+        #@order.payment_method = get_EwayID(@order)
+        params[:order][:payments_attributes] = Array.new.push({"payment_method_id" => get_EwayID().id.to_s})        
+        logger.info ":::EWAY PAYMENT DETECTED:::"
+        return
+      else
+        params.delete :payment_source
+      end
+      
 
       if @order.update_attributes(object_params)
         logger.debug ":::COUPON UPDATING::: #{@order.coupon_code}"
@@ -204,7 +215,7 @@ module Spree
           
         end
       end
-
+            
       load_order
       payment_method = get_PaypalID(@order)
 
@@ -223,8 +234,14 @@ module Spree
     end
     
     def get_PaypalID(order)
-      paypal = order.available_payment_methods.first
-      return paypal
+      order.available_payment_methods.each do |pm|
+        return pm if pm.kind_of?(Spree::BillingIntegration::PaypalExpress)
+      end
+      return nil
+    end
+
+    def get_EwayID()
+      return Spree::PaymentMethod.where("type = ?", "Spree::Gateway::Eway").first
     end
 
     def fixed_opts
