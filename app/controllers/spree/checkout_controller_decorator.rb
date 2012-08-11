@@ -287,8 +287,12 @@ module Spree
     def order_opts(order, payment_method, stage)
       items = order.line_items.map do |item|
         price = (item.price * 100).to_i # convert for gateway
+        short_description = ActionController::Base.helpers.truncate(item.variant.product.short_description, :length => 100, :omission => "...") if item.variant.product.short_description
+        if (!item.variant.is_master)
+          short_description = "(#{item.variant.options_text}) " + short_description
+        end  
         { :name        => item.variant.product.name,          
-          :description => (ActionController::Base.helpers.truncate(item.variant.product.short_description, :length => 100, :omission => "...") if item.variant.product.short_description),
+          :description => short_description,
           :sku         => item.variant.sku,
           :quantity    => item.quantity,
           :amount      => price,
